@@ -1,6 +1,6 @@
 {
   "name": "version-increment",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Updated description for testing",
   "main": "index.js",
   "scripts": {
