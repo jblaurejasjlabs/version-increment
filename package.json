@@ -1,17 +1,12 @@
 {
   "name": "version-increment",
   "version": "1.0.4",
-  "description": "",
+  "description": "Updated description for testing",
   "main": "index.js",
   "scripts": {
     "build": "echo Building project... && echo Build successful!",
     "test": "echo Running tests... && echo Tests passed!",
-    "prepare": "husky",
-<<<<<<< HEAD
-    "test2:new": "echo 'new test2'"
-=======
-    "test:new": "echo 'new test'"
->>>>>>> 0fb77f7c5ab09fb4fa0f8253eb1e4166a11c5b53
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
