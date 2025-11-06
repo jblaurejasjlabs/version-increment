@@ -1,0 +1,25 @@
+{
+  "name": "version-increment",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo Building project... && echo Build successful!",
+    "test": "echo Running tests... && echo Tests passed!",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jblaurejasjlabs/version-increment.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jblaurejasjlabs/version-increment/issues"
+  },
+  "homepage": "https://github.com/jblaurejasjlabs/version-increment#readme",
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

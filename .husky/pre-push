@@ -1,0 +1,15 @@
+#!/bin/sh
+
+echo "Running pre-push hook: Build validation"
+
+# Run build command
+npm run build
+
+# Check if build was successful
+if [ $? -ne 0 ]; then
+  echo "❌ Build failed! Push aborted."
+  exit 1
+fi
+
+echo "✅ Build successful! Continuing with push..."
+exit 0

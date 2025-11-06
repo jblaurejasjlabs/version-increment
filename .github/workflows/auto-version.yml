@@ -1,0 +1,114 @@
+name: Auto Increment Version
+
+on:
+  push:
+    branches:
+      - '**'  # Runs on all branches
+
+permissions:
+  contents: write
+
+jobs:
+  increment-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Prevent loop from bot commits
+        run: |
+          # Exit early if last commit message is a version bump or the actor is the actions bot
+          LAST_MSG=$(git log -1 --pretty=%B || echo "")
+          if echo "$LAST_MSG" | grep -q "Update version to v"; then
+            echo "Skipping: last commit is a version bump"
+            exit 0
+          fi
+          if [ "${GITHUB_ACTOR}" = "github-actions[bot]" ]; then
+            echo "Skipping: actor is github-actions[bot]"
+            exit 0
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Increment Version
+        run: |
+          # Check if package.json exists
+          if [ ! -f "package.json" ]; then
+            echo "Error: package.json not found"
+            exit 1
+          fi
+
+          # Get current version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+
+          # Split version into parts (major.minor.patch)
+          IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+          MAJOR=${VERSION_PARTS[0]}
+          MINOR=${VERSION_PARTS[1]}
+          PATCH=${VERSION_PARTS[2]}
+
+          # Increment patch version
+          PATCH=$((PATCH + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+
+          echo "New version: $NEW_VERSION"
+
+          # Update package.json with new version
+          node -e "
+          const fs = require('fs');
+          const pkg = require('./package.json');
+          pkg.version = '$NEW_VERSION';
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+          # Verify the change was made
+          UPDATED_VERSION=$(node -p "require('./package.json').version")
+          echo "Verified updated version: $UPDATED_VERSION"
+
+          # Set output for next step
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Commit and Push
+        run: |
+          # Check if there are any changes
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No changes detected in package.json"
+            exit 0
+          fi
+          
+          git add package.json
+          git commit -m "Update version to v$NEW_VERSION"
+          
+          # Push with retry logic
+          max_retries=3
+          retry_count=0
+          
+          while [ $retry_count -lt $max_retries ]; do
+            if git push origin "$GITHUB_REF_NAME"; then
+              echo "Successfully pushed version v$NEW_VERSION to branch $GITHUB_REF_NAME"
+              exit 0
+            else
+              retry_count=$((retry_count + 1))
+              if [ $retry_count -lt $max_retries ]; then
+                echo "Push failed, retrying ($retry_count/$max_retries)..."
+                sleep 2
+                git pull --rebase origin "$GITHUB_REF_NAME"
+              else
+                echo "Failed to push after $max_retries attempts"
+                exit 1
+              fi
+            fi
+          done
