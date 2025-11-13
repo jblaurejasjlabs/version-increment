@@ -1,8 +1,50 @@
 #!/bin/sh
 
-echo "Running pre-push hook: Build validation"
+echo "Running pre-push hook: Build validation and version check"
+
+# Check if package.json has changes in this push
+PACKAGE_JSON_CHANGED=$(git diff --name-only @{push}..HEAD | grep -c "^package.json$" || echo "0")
+
+if [ "$PACKAGE_JSON_CHANGED" -gt 0 ]; then
+  echo "📦 package.json has changes, incrementing version..."
+  
+  # Get current version
+  CURRENT_VERSION=$(node -p "require('./package.json').version")
+  echo "Current version: $CURRENT_VERSION"
+  
+  # Split version into parts (major.minor.patch)
+  IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+  MAJOR=${VERSION_PARTS[0]}
+  MINOR=${VERSION_PARTS[1]}
+  PATCH=${VERSION_PARTS[2]}
+  
+  # Increment patch version
+  PATCH=$((PATCH + 1))
+  NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+  
+  echo "New version: $NEW_VERSION"
+  
+  # Update package.json with new version
+  node -e "
+  const fs = require('fs');
+  const pkg = require('./package.json');
+  pkg.version = '$NEW_VERSION';
+  fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+  "
+  
+  # Stage the updated package.json
+  git add package.json
+  
+  # Amend the last commit to include version bump
+  git commit --amend --no-edit
+  
+  echo "✅ Version incremented to $NEW_VERSION and committed"
+else
+  echo "ℹ️  package.json unchanged, skipping version increment"
+fi
 
 # Run build command
+echo "🔨 Running build..."
 npm run build
 
 # Check if build was successful
@@ -13,3 +55,4 @@ fi
 
 echo "✅ Build successful! Continuing with push..."
 exit 0
+// ...existing code...
