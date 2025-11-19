@@ -3,10 +3,10 @@ name: Build and Test
 on:
   push:
     branches:
-      - '**'  # Runs on all branches
+      - "**"  # Runs on all branches
   pull_request:
     branches:
-      - '**'
+      - "**"
 
 permissions:
   contents: read
@@ -36,4 +36,4 @@ jobs:
       - name: Display current version
         run: |
           CURRENT_VERSION=$(node -p "require('./package.json').version")
-          echo "í³¦ Current package version: $CURRENT_VERSION"
+          echo "ï¿½ï¿½ï¿½ Current package version: $CURRENT_VERSION"
